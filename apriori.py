@@ -12,6 +12,7 @@ import sys
 from itertools import chain, combinations
 from collections import defaultdict
 from optparse import OptionParser
+import time
 
 
 def subsets(arr):
@@ -53,6 +54,8 @@ def getItemSetTransactionList(data_iterator):
         transactionList.append(transaction)
         for item in transaction:
             itemSet.add(frozenset([item]))              # Generate 1-itemSets
+    #print itemSet
+    #print transactionList
     return itemSet, transactionList
 
 
@@ -91,25 +94,70 @@ def runApriori(data_iter, minSupport, minConfidence):
         k = k + 1
 
     def getSupport(item):
+            #print item
             """local function which Returns the support of an item"""
             return float(freqSet[item])/len(transactionList)
+
+    def getRawSupport(item):
+        item = frozenset([item])
+        #print item
+        return float(freqSet[item])/len(transactionList)
+
+    def getRawBothSupport(item1,item2):
+        item = frozenset([item1,item2])
+        #print item
+        return float(freqSet[item]) / len(transactionList)
 
     toRetItems = []
     for key, value in largeSet.items():
         toRetItems.extend([(tuple(item), getSupport(item))
                            for item in value])
 
+
     toRetRules = []
     for key, value in largeSet.items()[1:]:
+        #print key
+        #print value
+        #print '\n------\n'
         for item in value:
+        #    print item
             _subsets = map(frozenset, [x for x in subsets(item)])
+            # print _subsets
+            # print '\n---******---\n'
             for element in _subsets:
+                # print element
                 remain = item.difference(element)
+                # print remain
+                # print '\n++++++\n'
                 if len(remain) > 0:
                     confidence = getSupport(item)/getSupport(element)
                     if confidence >= minConfidence:
                         toRetRules.append(((tuple(element), tuple(remain)),
                                            confidence))
+
+    # calculate lift for every rule and remove invalid elements
+    print '\n\n***********<post-processing>***********\n\n'
+    removed_num = 0
+    for rule in toRetRules:
+
+        xy_supoort = getRawBothSupport(rule[0][0][0], rule[0][1][0])
+        x_support = getRawSupport(rule[0][0][0])
+        y_support = getRawSupport(rule[0][1][0])
+
+        lift = xy_supoort/(x_support * y_support)
+        content = 'rule: '+str(rule)+'\t\t\t\t\t\t\t  lift: '+str(lift)
+
+        if lift <= 1:
+            content += ' \t\tinvalidXXXXXXXXXX'
+            toRetRules.remove(rule)
+            removed_num += 1
+        else:
+            content += ' \t\tvalid!!!'
+        print content
+    print str(removed_num) + ' rules are removed'
+    print '\n\n***********</post-processing>***********\n\n'
+
+
     return toRetItems, toRetRules
 
 
@@ -123,6 +171,7 @@ def printResults(items, rules):
         print "Rule: %s ==> %s , %.3f" % (str(pre), str(post), confidence)
 
 
+
 def dataFromFile(fname):
         """Function which reads from the file and yields a generator"""
         file_iter = open(fname, 'rU')
@@ -133,21 +182,21 @@ def dataFromFile(fname):
 
 
 if __name__ == "__main__":
-
+    t = time.time()
     optparser = OptionParser()
     optparser.add_option('-f', '--inputFile',
                          dest='input',
                          help='filename containing csv',
-                         default=None)
+                         default='groceries.csv')
     optparser.add_option('-s', '--minSupport',
                          dest='minS',
                          help='minimum support value',
-                         default=0.15,
+                         default=0.005,
                          type='float')
     optparser.add_option('-c', '--minConfidence',
                          dest='minC',
                          help='minimum confidence value',
-                         default=0.6,
+                         default=0.4,
                          type='float')
 
     (options, args) = optparser.parse_args()
@@ -167,3 +216,5 @@ if __name__ == "__main__":
     items, rules = runApriori(inFile, minSupport, minConfidence)
 
     printResults(items, rules)
+    t2 = time.time()
+    print "\nDuration: " + str(t2 - t)
