@@ -14,7 +14,36 @@ from collections import defaultdict
 from optparse import OptionParser
 import time
 
+"""***********<post-processing>***********
 
+
+rule: ((('ASIAN',), ('MBE',)), 0.9895470383275261)				  lift: 1.47445623759 		valid!!!
+rule: ((('BLACK',), ('MBE',)), 1.0)						  lift: 1.49003147954 		valid!!!
+rule: ((('NON-MINORITY',), ('WBE',)), 1.0)					  lift: 2.09439528024 		valid!!!
+0 rules are removed
+
+
+***********</post-processing>***********
+
+
+item: ('MBE', 'New York') , 0.170
+item: ('New York', 'WBE') , 0.175
+item: ('MBE', 'ASIAN') , 0.200
+item: ('ASIAN',) , 0.202
+item: ('New York',) , 0.295
+item: ('NON-MINORITY',) , 0.300
+item: ('NON-MINORITY', 'WBE') , 0.300
+item: ('BLACK',) , 0.301
+item: ('MBE', 'BLACK') , 0.301
+item: ('WBE',) , 0.477
+item: ('MBE',) , 0.671
+
+------------------------ RULES:
+Rule: ('ASIAN',) ==> ('MBE',) , 0.990
+Rule: ('BLACK',) ==> ('MBE',) , 1.000
+Rule: ('NON-MINORITY',) ==> ('WBE',) , 1.000
+Duration: 0.0832810401917
+"""
 def subsets(arr):
     """ Returns non empty subsets of arr"""
     return chain(*[combinations(arr, i + 1) for i, a in enumerate(arr)])
@@ -67,6 +96,7 @@ def runApriori(data_iter, minSupport, minConfidence):
      - rules ((pretuple, posttuple), confidence)
     """
     itemSet, transactionList = getItemSetTransactionList(data_iter)
+
 
     freqSet = defaultdict(int)
     largeSet = dict()
@@ -136,7 +166,7 @@ def runApriori(data_iter, minSupport, minConfidence):
                                            confidence))
 
     # calculate lift for every rule and remove invalid elements
-    print '\n\n***********<post-processing>***********\n\n'
+    print ('\n\n***********<post-processing>***********\n\n')
     removed_num = 0
     for rule in toRetRules:
 
@@ -153,9 +183,9 @@ def runApriori(data_iter, minSupport, minConfidence):
             removed_num += 1
         else:
             content += ' \t\tvalid!!!'
-        print content
-    print str(removed_num) + ' rules are removed'
-    print '\n\n***********</post-processing>***********\n\n'
+        print (content)
+    print (str(removed_num) + ' rules are removed')
+    print ('\n\n***********</post-processing>***********\n\n')
 
 
     return toRetItems, toRetRules
@@ -164,11 +194,12 @@ def runApriori(data_iter, minSupport, minConfidence):
 def printResults(items, rules):
     """prints the generated itemsets sorted by support and the confidence rules sorted by confidence"""
     for item, support in sorted(items, key=lambda (item, support): support):
-        print "item: %s , %.3f" % (str(item), support)
-    print "\n------------------------ RULES:"
+        print ("item: %s , %.3f" % (str(item), support))
+    print ("\n------------------------ RULES:")
     for rule, confidence in sorted(rules, key=lambda (rule, confidence): confidence):
         pre, post = rule
-        print "Rule: %s ==> %s , %.3f" % (str(pre), str(post), confidence)
+        print ("Rule: %s ==> %s , %.3f" % (str(pre), str(post), confidence))
+
 
 
 
@@ -176,8 +207,15 @@ def dataFromFile(fname):
         """Function which reads from the file and yields a generator"""
         file_iter = open(fname, 'rU')
         for line in file_iter:
-                line = line.strip().rstrip(',')                         # Remove trailing comma
-                record = frozenset(line.split(','))
+                line = line.strip().rstrip(',')
+                # print(line)
+                    # .rstrip(',')
+                # Remove trailing comma'
+                # list = line.split()[-1]
+
+                record =frozenset(line.split(','))
+
+                # print(record)
                 yield record
 
 
@@ -187,7 +225,7 @@ if __name__ == "__main__":
     optparser.add_option('-f', '--inputFile',
                          dest='input',
                          help='filename containing csv',
-                         default='groceries.csv')
+                         default='raw_user_follow.tsv')
     optparser.add_option('-s', '--minSupport',
                          dest='minS',
                          help='minimum support value',

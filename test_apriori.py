@@ -4,6 +4,24 @@ from itertools import chain
 from mock import patch
 import os
 import unittest
+"""
+***********<post-processing>***********
+
+
+rule: ((('beer',), ('rice',)), 0.6666666666666666)                                                        lift: 1.33333333333           valid!!!
+rule: ((('rice',), ('beer',)), 1.0)                                                       lift: 1.33333333333           valid!!!
+0 rules are removed
+
+
+***********</post-processing>***********
+
+
+...
+----------------------------------------------------------------------
+Ran 9 tests in 0.013s
+
+OK
+"""
 
 from apriori import (
     getItemSetTransactionList,
